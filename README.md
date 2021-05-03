@@ -2,7 +2,7 @@
 
 ## Prerequisites
 * Used Gophish and understand how to launch campaigns
-* Have Twilio API Key and Secret
+* Have Twilio API Key, API Secret and Twilio balance
 * Have ready a list of Phone Numbers **with the correct area code** for every victim user that is inputted in Gophish (**Order of users in Gophish should be the same as the phone number list or else the numbers will send to the wrong people**)
 
 ## Installation
@@ -44,7 +44,7 @@ The first thing you need to do is change the `config.ini` file. Provided in this
 
 You may also enable DEBUG mode by setting it to True if you want to save the messages being sent. These messages will be saved in a debug.log file.
 
-You also must create a **Message file** (default path: message.txt), this is the message that will be sent via SMS.
+You also must create a **Message file** (default path: message.txt), this is the message that will be sent via SMS. An example message file is shown below:
 ```
 Dear {{FIRST_NAME}},
 
@@ -55,11 +55,13 @@ Please click the link in this message: {{URL}}.
 Here you can use the following variables that will be replaced by the user information from Gophish.
 * {{FIRST_NAME}}: for the first name of each Gophish victim
 * {{LAST_NAME}}: for the last name of each Gophish victim
-* {{URL}}: landing page URL with the **Gophish Tracking ID for each user**
+* {{URL}}: landing page URL (e.g. https://example-site.com/), SMS Phishing Attacker will automatically append the individual **Gophish Tracking ID for each user** so that Gophish can track the links
 
 ## Setting up Gophish
-* Make sure to create a group of users either manually or import a CSV into Gophish, the email for each user does not matter and can be anything as the goal is not to send emails but SMS messages only.
+* Make sure to create a group of users either manually or import a CSV into Gophish
 * Make sure the landing page is setup and that it is accessible to outside users.
+
+**Note:** Since the focus is to send SMS Phishing attacks, the email for each user does not matter and can be anything, the important part is getting the generated IDs for each user once the campaign is started so that we can use Gophish to track the links.
 
 ## Launching the Campaign
 Once everything is setup, while creating the campaign **make sure you select the correct user group that corresponds with the phone number list you have prepared or else it will send the messages with the wrong information to the wrong people**.
