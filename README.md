@@ -2,7 +2,7 @@
 
 ## Prerequisites
 * Used Gophish and understand how to launch campaigns
-* Have Twilio API Key, API Secret and Twilio balance
+* Have a Twilio API Key, API Secret and make sure there is **Twilio balance** in your account
 * Have ready a list of Phone Numbers **with the correct area code** for every victim user that is inputted in Gophish (**Order of users in Gophish should be the same as the phone number list or else the numbers will send to the wrong people**)
 
 ## Installation
@@ -14,7 +14,7 @@ git clone https://github.com/yashrao/SMS-Phishing-Attacker
 cd SMS-Phishing-Attacker
 ```
 
-Then it's recommended but not mandatory to set up a Python virtualenv, you can do this by simply running the following:
+Then it's recommended (but not mandatory) to set up a Python virtualenv, you can do this by simply running the following:
 ```
 python3 -m venv venv # Optional but recommended
 source venv/bin/activate # Optional but recommended
@@ -31,7 +31,7 @@ git clone https://github.com/yashrao/SMS-Phishing-Attacker
 cd SMS-Phishing-Attacker
 python3 -m venv venv
 source venv/bin/activate
-source venv/bin/activate
+pip3 install -r requirements.txt
 ```
 
 ## Getting Started
@@ -76,3 +76,6 @@ python3 smishing_attacker.py
 You will see a preview of the message to be sent and simply hit "n" to cancel or any key to continue and the SMS Phishing will have started.
 
 **NOTE:** For the time being, make sure there is only one campaign in Gophish as this hasn't been tested with more than one.
+
+## Disclaimer
+All the provided tools are for legal use only by professional penetration testers or cyber-security related people. The tool must be used with written consent from the organisation or individuals the tool is targeting, the author is not responsible for any misuse of these tools.
