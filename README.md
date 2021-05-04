@@ -68,7 +68,7 @@ Once everything is setup, while creating the campaign **make sure you select the
 
 Finally you can launch the campaign for Gophish, if you've inputted fake/invalid emails for the users you might have to wait for the campaign screen to error out before sending the SMS otherwise it will clear any existing data. Once you see ERROR on all the emails then you can begin SMS phishing.
 
-Once that is all done, you can begin the SMS Phishing by running:
+To begin SMS Phishing, simply run:
 ```
 python3 smishing_attacker.py
 ```
