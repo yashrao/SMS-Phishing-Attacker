@@ -44,6 +44,8 @@ The first thing you need to do is change the `config.ini` file. Provided in this
 
 You may also enable DEBUG mode by setting it to True if you want to save the messages being sent. These messages will be saved in a debug.log file.
 
+PREVIEW_ONLY, if set to True, will not send the SMS but simply preview the first message that will be send with all the variables replaced with their respective values. Useful to test out before sending out any messages just to make sure things are fully prepared.
+
 You also must create a **Message file** (default path: message.txt), this is the message that will be sent via SMS.
 ```
 Dear {{FIRST_NAME}},
@@ -56,6 +58,11 @@ Here you can use the following variables that will be replaced by the user infor
 * {{FIRST_NAME}}: for the first name of each Gophish victim
 * {{LAST_NAME}}: for the last name of each Gophish victim
 * {{URL}}: landing page URL with the **Gophish Tracking ID for each user**
+
+Additional variables are as followed:
+* {{FIRST_NAME_LOWER}}: for a lowercase version of first name
+* {{LAST_NAME_LOWER}}: for a lowercase version of last name
+* {{TODAY_DATE_FORMAT}}: today's date format in strftime format (NOTE: you must add an extra '%' sign for each '%' sign present for the config.ini file)
 
 ## Setting up Gophish
 * Make sure to create a group of users either manually or import a CSV into Gophish, the email for each user does not matter and can be anything as the goal is not to send emails but SMS messages only.

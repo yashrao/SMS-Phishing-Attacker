@@ -16,7 +16,10 @@ from twilio.base.exceptions import TwilioRestException
 
 URL = '{{URL}}'
 FIRST_NAME = '{{FIRST_NAME}}'
+TODAY_DATE_FORMAT = '{{TODAY_DATE}}'
 LAST_NAME = '{{LAST_NAME}}'
+FIRST_NAME_LOWER = '{{FIRST_NAME_LOWER}}'
+LAST_NAME_LOWER = '{{LAST_NAME_LOWER}}'
 
 ###
 
@@ -25,12 +28,17 @@ LAST_NAME = '{{LAST_NAME}}'
 CONFIG = 'config.ini'
 COLUMN_HEADINGS='First Name,Last Name,Email,RID\n'
 DEBUG = False
+PREVIEW_ONLY = False
 
 ###
 
 def set_debug():
     global DEBUG
     DEBUG = True
+
+def set_preview_only():
+    global PREVIEW_ONLY
+    PREVIEW_ONLY = True
 
 def write_log(info: str, info_type: str):
     now = datetime.now()
@@ -44,23 +52,50 @@ def get_config(config_filename: str) -> dict:
     config.read(config_filename)
     return config
 
-def get_victims(gophish_api_key: str) -> dict:
-    campaigns = requests.get('https://localhost:3333/api/campaigns/?api_key=' + gophish_api_key['GOPHISH_API_KEY'], verify=False)
+def get_campaign_index(campaigns: dict):
+    ## ID | NAME
+    ## _________
+    ##    | 
+    print('####### BEGIN CAMPAIGN OPTIONS #######')
+    campaigns = campaigns.json()
+    res = {}
+    index = 0
+    for campaign in campaigns:
+        res[campaign['id']] = (index, campaign['name'])
+        print('{}:{}'.format(campaign['id'], campaign['name']))
+        index += 1
+
+    print('#####################################\n')
+    return res
+
+def get_victims(gophish_settings: str) -> dict:
+    campaign_id = gophish_settings['CAMPAIGN_ID']
+    campaigns = requests.get('https://localhost:3333/api/campaigns/?api_key=' + gophish_settings['GOPHISH_API_KEY'], verify=False)
     res = None
+    
+    campaign_index = get_campaign_index(campaigns)
+    try:
+        campaign_id = int(campaign_id)
+    except ValueError as e:
+        print('No campaign ID specified... Displaying')
+        print('\nPlease select a Campaign ID and update the config.ini file\n')
+        print('exiting...')
+        exit(1)
 
     try:
-        res = campaigns.json()[0]['results']
+        res = campaigns.json()[campaign_index[campaign_id][0]]['results']
     except KeyError as e:
-        print('ERROR: Something has gone wrong')
+        print('ERROR: Campaign index not found')
         print('exiting...')
-        print(campaigns.json())
         exit(1)
     except IndexError as e:
+        #raise e ## TODO: change this
         print('ERROR: No Campaign Results found')
         print('exiting...')
         exit(1)
 
     with open('victims.csv', 'w') as f:
+        print('Found Users... Check victims.csv')
         f.write(COLUMN_HEADINGS)
         for user in res:
             f.write(user['first_name'] + ',' + user['last_name'] + ',' + user['email'] + ',' + user['id'] + '\n')
@@ -94,7 +129,12 @@ def get_phone_numbers(filepath: str) -> list:
         exit(1)
 
 def check_input():
-    user_input = input('Continue (Y/n)? ')
+    if PREVIEW_ONLY:
+        preview_msg = '[Preview Only]'
+    else:
+        preview_msg = '[WARNING: Sending Real SMS]'
+
+    user_input = input('Continue (Y/n)? {}: '.format(preview_msg))
     if user_input == 'n':
         print('exiting...')
         exit(0)
@@ -121,7 +161,7 @@ def get_message(filepath: str) -> list:
         print('exiting...')
         exit(1)
 
-def create_custom_message(message: str, victim: dict, link: str) -> str:
+def create_custom_message(message: str, victim: dict, link: str, date_format: str) -> str:
     if link[-1] != '/':
         link = link + '/'
     url = link + '?rid=' + victim['id']
@@ -130,18 +170,25 @@ def create_custom_message(message: str, victim: dict, link: str) -> str:
 
     message = message.replace(FIRST_NAME, first_name)
     message = message.replace(LAST_NAME, last_name)
+    message = message.replace(FIRST_NAME_LOWER, first_name.lower())
+    message = message.replace(LAST_NAME_LOWER, last_name.lower())
+    message = message.replace(TODAY_DATE_FORMAT, datetime.now().strftime(date_format)) #TODO: Add support for custom date
     message = message.replace(URL, url)
     if DEBUG: 
         write_log(message, 'MESSAGE')
+    if PREVIEW_ONLY:
+        print('\n\n ~~~~~~ PRINTING PREVIEW MESSAGE ~~~~~~\n\n')
+        print(message)
+        exit(0)
     return message
 
-def send_sms(twilio_config: dict, phone_numbers: list, victims: list, message: str, link: str):
+def send_sms(twilio_config: dict, phone_numbers: list, victims: list, message: str, link: str, date_format: str):
     print('Sending SMS...')
     client = Client(twilio_config['TWILIO_ACCOUNT_SID'], twilio_config['TWILIO_AUTH_TOKEN']) 
     
     for i in range(len(phone_numbers)):
         to_number = phone_numbers[i]
-        custom_msg = create_custom_message(message, victims[i], link)
+        custom_msg = create_custom_message(message, victims[i], link, date_format)
         twilio_send_sms(client, twilio_config['TWILIO_MSG_SERVICE_ID'], custom_msg, to_number) # TODO: UNCOMMENT
         print('Sent to {}'.format(to_number))
         sleep(1)  # Prevent spamming the Twilio server
@@ -168,18 +215,24 @@ def check_data_dimensions(phone_numbers, victims):
         exit(1)
 
 def main():
+    print('')
     config = get_config(CONFIG)
     if 'DEBUG' in config['SETTINGS'].keys():
         if config['SETTINGS']['DEBUG'] == 'True':
             set_debug()
-            print('Debug mode on... Outputing all messages to out.log')
+            print('DEBUG mode on... Outputing all messages to out.log')
+    if 'PREVIEW_ONLY' in config['SETTINGS'].keys():
+        if config['SETTINGS']['PREVIEW_ONLY'] == 'True':
+            set_preview_only()
+            print('PREVIEW ONLY mode on... will not send any messages')
 
+    print('')
     victims = get_victims(config['GOPHISH'])
     phone_numbers = get_phone_numbers(config['SETTINGS']['PHONE_NUMBERS_PATH'])
     check_data_dimensions(phone_numbers, victims)
     message = get_message(config['SETTINGS']['MESSAGE_PATH'])
 
-    send_sms(config['TWILIO'], phone_numbers, victims, message, config['SETTINGS']['GOPHISH_LANDING_PAGE_URL'])
+    send_sms(config['TWILIO'], phone_numbers, victims, message, config['SETTINGS']['GOPHISH_LANDING_PAGE_URL'], config['SETTINGS']['DATE'])
 
     print('DONE!')
     exit(0)
